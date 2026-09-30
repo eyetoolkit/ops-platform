@@ -1,0 +1,24 @@
+# Profile: eyetoolkit-consensus
+# Ophthalmology consensus/guidelines site (VitePress), its own repo.
+
+site: eyetoolkit-consensus
+domain: eyetoolkit.com/consensus/
+type: vitepress
+
+repo: eyetoolkit/eyetoolkit-consensus
+default_ref: main
+source_repo_dir: .
+
+build_cmd: 'npm ci && npm run build'
+artifact: docs/.vitepress/dist
+
+deploy_target:
+  host: 101.96.194.237
+  remote_dir: /home/blog-deploy/eyetoolkit-consensus
+  nginx_reload: true
+
+health_check_url: https://eyetoolkit.com/consensus/
+
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST

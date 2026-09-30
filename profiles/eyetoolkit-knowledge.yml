@@ -1,0 +1,29 @@
+# Profile: eyetoolkit-knowledge
+# VitePress sub-site served as a sub-path of eyetoolkit.com (nginx alias).
+# Source lives inside the eyetoolkit/blog monorepo (sites/knowledge).
+
+site: eyetoolkit-knowledge
+domain: eyetoolkit.com/knowledge/
+type: monorepo-vitepress
+
+repo: eyetoolkit/blog
+default_ref: master
+source_repo_dir: .
+
+build_cmd: 'cd sites/knowledge && npm ci && npm run docs:build'
+artifact: sites/knowledge/knowledge/.vitepress/dist
+
+deploy_target:
+  host: 101.96.194.237
+  remote_dir: /home/blog-deploy/eyetoolkit-knowledge
+  nginx_reload: true
+
+health_check_url: https://eyetoolkit.com/knowledge/
+
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST
+
+notes: |
+  Part of the eyetoolkit/blog monorepo. Deploys to its own nginx alias dir so the
+  main-site cron (rsync --delete on /home/blog-deploy/eyetoolkit) never wipes it.
