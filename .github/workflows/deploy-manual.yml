@@ -1,7 +1,7 @@
 name: Deploy Site (Manual Trigger)
 
-# Manual trigger wrapper — since workflow_call cannot also be workflow_dispatch,
-# we use this thin wrapper so humans can fire deploys from the GitHub UI or API.
+# Manual trigger wrapper — workflow_call cannot also be workflow_dispatch,
+# so we use this thin wrapper so humans can fire deploys from GitHub UI or API.
 
 on:
   workflow_dispatch:
@@ -9,11 +9,9 @@ on:
       profile:
         description: "Profile name (without .yml)"
         required: true
-        type: string
       ref:
         description: "Git ref of target repo"
         required: false
-        type: string
 
 jobs:
   call-deploy:
