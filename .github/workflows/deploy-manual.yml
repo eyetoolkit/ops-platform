@@ -11,9 +11,8 @@ on:
         required: true
         default: "eyetoolkit-blog"
       ref:
-        description: "Git ref of target repo"
+        description: "Git ref of target repo (empty -> profile default_ref)"
         required: false
-        default: "main"
 
 jobs:
   call-deploy:
