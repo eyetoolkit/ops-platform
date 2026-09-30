@@ -1,20 +1,18 @@
 name: Deploy Site (Reusable)
 
-# This workflow is called by their own .github/workflows/deploy.yml in each site repo.
-# It does NOT trigger on push directly here — it runs when another workflow calls it.
+# Called by other repos' deploy.yml (reusable workflow pattern).
+# Inputs: only description + required are allowed in workflow_call.inputs (no type).
+# String values can carry default; empty/missing => empty string.
 
 on:
-  # Called by other repos' deploy.yml (reusable workflow pattern)
   workflow_call:
     inputs:
       profile:
         description: "Profile name (without .yml) — must exist in ops-platform/profiles/"
         required: true
-        type: string
       ref:
-        description: "Git ref (branch/tag) of the target repo to deploy. Defaults to main."
+        description: "Git ref (branch/tag) of target repo to deploy. Empty => main."
         required: false
-        type: string
     secrets:
       DEPLOY_SSH_KEY:
         description: "SSH private key for the deploy user on the target host"
@@ -25,11 +23,9 @@ on:
       DEPLOY_USER:
         description: "Target SSH username"
         required: false
-        type: string
       DEPLOY_NOTIFY_WEBHOOK:
         description: "Optional webhook URL for failure notifications (WeCom/DingTalk/Feishu)"
         required: false
-        type: string
 
 jobs:
   deploy:
@@ -63,6 +59,7 @@ jobs:
             set -euo pipefail
             PROFILE="${{ inputs.profile }}"
             REF="${{ inputs.ref }}"
+            [ -z "$REF" ] && REF="main"
             OPS_DIR=/opt/ops-platform
             mkdir -p "$OPS_DIR/profiles" "$OPS_DIR/scripts"
             cp -f ops/profiles/$PROFILE.yml "$OPS_DIR/profiles/"
