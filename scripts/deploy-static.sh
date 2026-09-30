@@ -43,6 +43,8 @@ print('\n'.join(out))
 PYEOF
 )"
 
+# 若未显式传 ref，则使用 profile 声明的 default_ref
+if [ -z "$REF" ]; then REF="$REF_DEFAULT"; fi
 echo "=== Profile: $PROFILE ==="
 echo "  site:        $SITE"
 echo "  domain:      $DOMAIN"
@@ -64,6 +66,14 @@ echo "=== Deploy log: $LOG ==="
 
 # Step 1: clone
 echo "[1/5] Cloning $REPO @ $REF ..."
+# 若已存在 clone 但 remote 与当前 profile 不符（如改了 repo），强制重新 clone
+if [ -d "$WORKDIR/repo/.git" ]; then
+    EXISTING_REMOTE="$(git -C "$WORKDIR/repo" remote get-url origin 2>/dev/null || true)"
+    if [ "$EXISTING_REMOTE" != "https://github.com/$REPO.git" ]; then
+        echo "  remote mismatch ($EXISTING_REMOTE), re-cloning"
+        rm -rf "$WORKDIR/repo"
+    fi
+fi
 if [ -d "$WORKDIR/repo" ]; then
     cd "$WORKDIR/repo"
     git fetch --depth=1 origin "$REF" 2>&1 | tail -3

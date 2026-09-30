@@ -5,11 +5,11 @@ site: eyetoolkit-blog                  # name of /home/blog-deploy/<site>
 domain: blog.eyetoolkit.com
 type: monorepo-vitepress              # build flavour
 
-repo: eyetoolkit/blog.eyetoolkit.com   # GitHub source repo
-default_ref: main
+repo: eyetoolkit/blog                 # GitHub source repo (real monorepo)
+default_ref: master                    # repo default branch is `master`, NOT `main`
 source_repo_dir: .                    # repo root contains /docs
 
-build_cmd: 'npm ci && cd sites/blog && npm ci && npm run build'
+build_cmd: 'cd sites/blog && npm ci && npm run build'
 
 artifact: sites/blog/docs/.vitepress/dist
 
