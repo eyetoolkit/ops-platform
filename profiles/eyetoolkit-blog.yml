@@ -1,0 +1,31 @@
+# Profile: eyetoolkit-blog
+# Blog sub-domain deployment (Phase 1 trial).
+
+site: eyetoolkit-blog                  # name of /home/blog-deploy/<site>
+domain: blog.eyetoolkit.com
+type: monorepo-vitepress              # build flavour
+
+repo: eyetoolkit/blog.eyetoolkit.com   # GitHub source repo
+default_ref: main
+source_repo_dir: .                    # repo root contains /docs
+
+build_cmd: 'npm ci && cd sites/blog && npm ci && npm run build'
+
+artifact: sites/blog/docs/.vitepress/dist
+
+deploy_target:
+  host: 101.96.194.237                # informational only (real value from secrets)
+  remote_dir: /home/blog-deploy/eyetoolkit-blog
+  nginx_reload: true                  # site is served by nginx (sites-enabled/blog)
+
+health_check_url: https://blog.eyetoolkit.com/
+
+# secrets required on the CALLEE workflow_call (GitHub propagates from caller)
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST
+  # - DEPLOY_NOTIFY_WEBHOOK   # optional
+
+notes: |
+  Phase 1 trial. Each monorepo sub-site has its own profile (knowledge/wiki/exam/drugs/life)
+  with the same shape but different artifact path and remote_dir.
