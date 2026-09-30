@@ -70,11 +70,17 @@ jobs:
               rm -rf "$OPS_DIR"
               git clone --depth=1 https://github.com/eyetoolkit/ops-platform.git "$OPS_DIR"
             fi
-            chmod +x "$OPS_DIR/scripts/deploy-static.sh"
+            chmod +x "$OPS_DIR/scripts/"*.sh
             echo "✓ fetched profile + scripts (via git)"
 
-            # Pass profile content via stdin to deploy-static.sh via a tmp env file
-            bash "$OPS_DIR/scripts/deploy-static.sh" "$PROFILE" "$REF" "$OPS_DIR"
+            # 按 profile 的 type 分发到对应部署脚本（static / flask）
+            DEPLOY_TYPE=$(python3 -c "import yaml;print(yaml.safe_load(open('$OPS_DIR/profiles/$PROFILE.yml')).get('type','static'))")
+            echo "  profile type: $DEPLOY_TYPE"
+            if [ "$DEPLOY_TYPE" = "flask" ]; then
+              bash "$OPS_DIR/scripts/deploy-flask.sh" "$PROFILE" "$REF" "$OPS_DIR"
+            else
+              bash "$OPS_DIR/scripts/deploy-static.sh" "$PROFILE" "$REF" "$OPS_DIR"
+            fi
 
       - name: Health check
         if: success()

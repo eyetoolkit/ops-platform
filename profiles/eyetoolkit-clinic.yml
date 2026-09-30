@@ -1,0 +1,30 @@
+# Profile: eyetoolkit-clinic
+# Flask clinic system (query + admin), one repo running two gunicorn services.
+# Credentials are injected via systemd Environment (NOT in the repo).
+
+site: eyetoolkit-clinic
+domain: clinic.eyetoolkit.com/
+type: flask
+
+repo: eyetoolkit/clinic
+default_ref: main
+
+# build_cmd 省略：依赖（flask/gunicorn/bcrypt/openpyxl）已全局安装
+
+deploy_target:
+  host: 101.96.194.237
+  remote_dir: /opt/clinic
+  systemd_unit:
+    - clinic-query
+    - clinic-admin
+
+health_check_url: https://clinic.eyetoolkit.com/
+
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST
+  - DEPLOY_USER
+
+notes: |
+  DB (aitong.db) lives at /var/www/clinic — outside the repo, untouched by deploys.
+  Credentials come from systemd unit Environment= lines.

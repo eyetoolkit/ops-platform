@@ -1,0 +1,22 @@
+# Profile: eyetoolkit-clinic-superadmin
+# Flask superadmin subsystem, own repo + own gunicorn service.
+
+site: eyetoolkit-clinic-superadmin
+domain: clinic.eyetoolkit.com/super/
+type: flask
+
+repo: eyetoolkit/clinic-superadmin
+default_ref: main
+
+deploy_target:
+  host: 101.96.194.237
+  remote_dir: /opt/clinic-superadmin
+  systemd_unit:
+    - clinic-super
+
+health_check_url: https://clinic.eyetoolkit.com/super/login
+
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST
+  - DEPLOY_USER
