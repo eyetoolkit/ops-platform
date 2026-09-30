@@ -1,0 +1,29 @@
+name: Deploy Site (Manual Trigger)
+
+# Manual trigger wrapper — since workflow_call cannot also be workflow_dispatch,
+# we use this thin wrapper so humans can fire deploys from the GitHub UI or API.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Profile name (without .yml)"
+        required: true
+        type: string
+      ref:
+        description: "Git ref of target repo"
+        required: false
+        type: string
+        default: "main"
+
+jobs:
+  call-deploy:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      profile: ${{ inputs.profile }}
+      ref: ${{ inputs.ref }}
+    secrets:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_NOTIFY_WEBHOOK: ${{ secrets.DEPLOY_NOTIFY_WEBHOOK }}
