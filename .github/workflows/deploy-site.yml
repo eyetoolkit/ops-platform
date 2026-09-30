@@ -52,6 +52,7 @@ jobs:
 
       - name: Build & deploy via SSH (single session)
         uses: appleboy/ssh-action@v1
+        command_timeout: 30m   # 大型 VitePress 构建（267M monorepo）可能超过默认 10m
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}

@@ -10,7 +10,7 @@ repo: eyetoolkit/blog
 default_ref: master
 source_repo_dir: .
 
-build_cmd: 'cd sites/drugs && npm ci && npm run build'
+build_cmd: 'cd sites/drugs && npm install --no-audit --no-fund && npm run build'
 artifact: sites/drugs/docs/.vitepress/dist
 
 deploy_target:
