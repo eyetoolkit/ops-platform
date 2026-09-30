@@ -1,7 +1,7 @@
 name: Deploy Site (Manual Trigger)
 
-# Manual trigger wrapper — workflow_call cannot also be workflow_dispatch,
-# so we use this thin wrapper so humans can fire deploys from GitHub UI or API.
+# Manual trigger wrapper — workflow_call cannot also be workflow_dispatch.
+# This thin wrapper calls the reusable workflow.
 
 on:
   workflow_dispatch:
@@ -9,15 +9,11 @@ on:
       profile:
         description: "Profile name (without .yml)"
         required: true
-        type: choice
-        options:
-          - eyetoolkit-blog
+        default: "eyetoolkit-blog"
       ref:
         description: "Git ref of target repo"
         required: false
-        type: choice
-        options:
-          - main
+        default: "main"
 
 jobs:
   call-deploy:
