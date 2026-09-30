@@ -45,6 +45,11 @@ PYEOF
 
 # 若未显式传 ref，则使用 profile 声明的 default_ref
 if [ -z "$REF" ]; then REF="$REF_DEFAULT"; fi
+# 若指定 ref 在远端不存在（例如默认占位分支 main），回退到 profile 的 default_ref
+if ! git ls-remote --exit-code --heads "https://github.com/$REPO.git" "$REF" >/dev/null 2>&1; then
+  echo "  ref '$REF' 不在远端，回退到 default_ref '$REF_DEFAULT'"
+  REF="$REF_DEFAULT"
+fi
 echo "=== Profile: $PROFILE ==="
 echo "  site:        $SITE"
 echo "  domain:      $DOMAIN"

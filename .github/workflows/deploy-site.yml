@@ -60,7 +60,6 @@ jobs:
             set -euo pipefail
             PROFILE="${{ inputs.profile }}"
             REF="${{ inputs.ref }}"
-            [ -z "$REF" ] && REF="main"
             OPS_DIR=/opt/ops-platform
 
             # 用 git 拉取 ops-platform（避免 raw.githubusercontent CDN 缓存导致拿到陈旧/CRLF 文件）
