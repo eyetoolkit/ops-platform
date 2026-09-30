@@ -4,19 +4,7 @@ name: Deploy Site (Reusable)
 # It does NOT trigger on push directly here — it runs when another workflow calls it.
 
 on:
-  # Allow manual dispatch (handy for testing + GitHub API trigger)
-  workflow_dispatch:
-    inputs:
-      profile:
-        description: "Profile name (without .yml) — must exist in profiles/"
-        required: true
-        type: string
-      ref:
-        description: "Git ref of target repo"
-        required: false
-        type: string
-        default: "main"
-  # Called by other repos' deploy.yml
+  # Called by other repos' deploy.yml (reusable workflow pattern)
   workflow_call:
     inputs:
       profile:
