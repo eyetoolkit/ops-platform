@@ -15,7 +15,6 @@ on:
         description: "Git ref (branch/tag) of the target repo to deploy. Defaults to main."
         required: false
         type: string
-        default: "main"
     secrets:
       DEPLOY_SSH_KEY:
         description: "SSH private key for the deploy user on the target host"
@@ -26,11 +25,11 @@ on:
       DEPLOY_USER:
         description: "Target SSH username"
         required: false
-        default: "root"
+        type: string
       DEPLOY_NOTIFY_WEBHOOK:
         description: "Optional webhook URL for failure notifications (WeCom/DingTalk/Feishu)"
         required: false
-        default: ""
+        type: string
 
 jobs:
   deploy:
