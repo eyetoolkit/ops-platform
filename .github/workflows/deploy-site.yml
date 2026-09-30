@@ -1,0 +1,105 @@
+name: Deploy Site (Reusable)
+
+# This workflow is called by their own .github/workflows/deploy.yml in each site repo.
+# It does NOT trigger on push directly here — it runs when another workflow calls it.
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: "Profile name (without .yml) — must exist in ops-platform/profiles/"
+        required: true
+        type: string
+      ref:
+        description: "Git ref (branch/tag) of the target repo to deploy. Defaults to main."
+        required: false
+        type: string
+        default: "main"
+    secrets:
+      DEPLOY_SSH_KEY:
+        description: "SSH private key for the deploy user on the target host"
+        required: true
+      DEPLOY_HOST:
+        description: "Target host (IP or hostname)"
+        required: true
+      DEPLOY_USER:
+        description: "Target SSH username"
+        required: false
+        default: "root"
+      DEPLOY_NOTIFY_WEBHOOK:
+        description: "Optional webhook URL for failure notifications (WeCom/DingTalk/Feishu)"
+        required: false
+        default: ""
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.profile }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout ops-platform repo
+        uses: actions/checkout@v4
+        with:
+          repository: eyetoolkit/ops-platform
+          path: ops
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate profile exists
+        run: |
+          if [ ! -f "ops/profiles/${{ inputs.profile }}.yml" ]; then
+            echo "::error::Profile file not found: ops/profiles/${{ inputs.profile }}.yml"
+            exit 1
+          fi
+          echo "✓ Profile found"
+
+      - name: Build & deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            PROFILE="${{ inputs.profile }}"
+            REF="${{ inputs.ref }}"
+            OPS_DIR=/opt/ops-platform
+            mkdir -p "$OPS_DIR/profiles" "$OPS_DIR/scripts"
+            cp -f ops/profiles/$PROFILE.yml "$OPS_DIR/profiles/"
+            cp -rf ops/scripts "$OPS_DIR/"
+            chmod +x "$OPS_DIR/scripts/"*.sh
+            bash "$OPS_DIR/scripts/deploy-static.sh" "$PROFILE" "$REF" "$OPS_DIR"
+
+      - name: Health check
+        if: success()
+        run: |
+          URL=$(python3 -c "
+          import yaml
+          p=yaml.safe_load(open('ops/profiles/${{ inputs.profile }}.yml'))
+          print(p['health_check_url'])
+          ")
+          echo "Health checking: $URL"
+          sleep 8
+          for i in 1 2 3 4 5; do
+            code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 10 "$URL")
+            echo "  attempt $i: HTTP $code"
+            if [ "$code" = "200" ] || [ "$code" = "301" ] || [ "$code" = "302" ]; then
+              echo "✓ Healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Health check failed after 5 attempts"
+          exit 1
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.DEPLOY_NOTIFY_WEBHOOK }}" ]; then
+            MSG="❌ Deploy failed: profile=${{ inputs.profile }} ref=${{ inputs.ref }} host=${{ secrets.DEPLOY_HOST }} runUrl=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            curl -sk -X POST "${{ secrets.DEPLOY_NOTIFY_WEBHOOK }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"msgtype\":\"text\",\"content\":{\"text\":\"${MSG}\"}}"
+          else
+            echo "(no webhook configured; failure not notified)"
+          fi
