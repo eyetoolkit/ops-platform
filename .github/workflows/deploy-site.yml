@@ -1,37 +1,25 @@
 name: Deploy Site (Reusable)
 
 # Called by other repos' deploy.yml (reusable workflow pattern).
-# Inputs: only description + required are allowed in workflow_call.inputs (no type).
-# String values can carry default; empty/missing => empty string.
+# Per GitHub API: workflow_call.inputs MUST contain only "description" (string).
+# No `type`, no `default`, no `required`. All values passed as strings.
 
 on:
   workflow_call:
     inputs:
       profile:
         description: "Profile name (without .yml) — must exist in ops-platform/profiles/"
-        required: true
-        type: choice
-        options:
-          - eyetoolkit-blog
       ref:
-        description: "Git ref (branch/tag) of target repo to deploy. Empty => main."
-        required: false
-        type: choice
-        options:
-          - main
+        description: "Git ref (branch/tag) of target repo. Empty defaults to main."
     secrets:
       DEPLOY_SSH_KEY:
-        description: "SSH private key for the deploy user on the target host"
-        required: true
+        description: "SSH private key for deploy user"
       DEPLOY_HOST:
         description: "Target host (IP or hostname)"
-        required: true
       DEPLOY_USER:
         description: "Target SSH username"
-        required: false
       DEPLOY_NOTIFY_WEBHOOK:
-        description: "Optional webhook URL for failure notifications (WeCom/DingTalk/Feishu)"
-        required: false
+        description: "Optional webhook URL for failure alerts"
 
 jobs:
   deploy:
