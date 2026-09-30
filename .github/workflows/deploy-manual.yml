@@ -14,7 +14,6 @@ on:
         description: "Git ref of target repo"
         required: false
         type: string
-        default: "main"
 
 jobs:
   call-deploy:
