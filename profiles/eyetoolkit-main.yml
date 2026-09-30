@@ -1,0 +1,33 @@
+# Profile: eyetoolkit-main
+# Main site (Next.js static export), production branch restore/chinese-v1.
+# Replaces the every-10-min cron /root/deploy-eyetoolkit.sh with push-triggered deploys.
+
+site: eyetoolkit-main
+domain: eyetoolkit.com/
+type: nextjs-static
+
+repo: eyetoolkit/eyetoolkit
+default_ref: restore/chinese-v1
+source_repo_dir: .
+
+# npm install (repo has no lockfile) + build + safety gate:
+# never deploy color-vision tool even if it sneaks back into the branch
+build_cmd: 'npm install --no-audit --no-fund && npm run build && rm -rf out/zh/tools/color-vision out/en/tools/color-vision'
+artifact: out/
+
+deploy_target:
+  host: 101.96.194.237
+  remote_dir: /home/blog-deploy/eyetoolkit
+  nginx_reload: true
+
+health_check_url: https://eyetoolkit.com/
+
+secrets_required:
+  - DEPLOY_SSH_KEY
+  - DEPLOY_HOST
+  - DEPLOY_USER
+
+notes: |
+  Same rsync --delete target as the legacy cron script. color-vision safety gate
+  preserved from /root/deploy-eyetoolkit.sh. Cron kept as fallback until the
+  push-triggered pipeline is verified.
