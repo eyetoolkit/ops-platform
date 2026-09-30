@@ -62,14 +62,17 @@ jobs:
             REF="${{ inputs.ref }}"
             [ -z "$REF" ] && REF="main"
             OPS_DIR=/opt/ops-platform
-            mkdir -p "$OPS_DIR/profiles" "$OPS_DIR/scripts" "$OPS_DIR/secrets"
 
-            # Download scripts + profile from raw github (works because action's runner has internet)
-            BASE="https://raw.githubusercontent.com/eyetoolkit/ops-platform/main"
-            curl -fsSL "$BASE/scripts/deploy-static.sh" -o "$OPS_DIR/scripts/deploy-static.sh"
-            curl -fsSL "$BASE/profiles/$PROFILE.yml"        -o "$OPS_DIR/profiles/$PROFILE.yml"
+            # 用 git 拉取 ops-platform（避免 raw.githubusercontent CDN 缓存导致拿到陈旧/CRLF 文件）
+            if [ -d "$OPS_DIR/.git" ]; then
+              git -C "$OPS_DIR" fetch --depth=1 origin main
+              git -C "$OPS_DIR" checkout -f FETCH_HEAD
+            else
+              rm -rf "$OPS_DIR"
+              git clone --depth=1 https://github.com/eyetoolkit/ops-platform.git "$OPS_DIR"
+            fi
             chmod +x "$OPS_DIR/scripts/deploy-static.sh"
-            echo "✓ fetched profile + scripts"
+            echo "✓ fetched profile + scripts (via git)"
 
             # Pass profile content via stdin to deploy-static.sh via a tmp env file
             bash "$OPS_DIR/scripts/deploy-static.sh" "$PROFILE" "$REF" "$OPS_DIR"
@@ -77,9 +80,9 @@ jobs:
       - name: Health check
         if: success()
         run: |
-          URL=$(curl -fsSL "https://raw.githubusercontent.com/eyetoolkit/ops-platform/main/profiles/${{ inputs.profile }}.yml" | python3 -c "
-          import yaml,sys
-          print(yaml.safe_load(sys.stdin)['health_check_url'])
+          URL=$(python3 -c "
+          import yaml
+          print(yaml.safe_load(open('ops/profiles/${{ inputs.profile }}.yml'))['health_check_url'])
           ")
           echo "Health checking: $URL"
           sleep 8
