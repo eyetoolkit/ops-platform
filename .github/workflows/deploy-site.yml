@@ -9,8 +9,12 @@ on:
     inputs:
       profile:
         description: "Profile name (without .yml) — must exist in ops-platform/profiles/"
+        type: string
+        default: "eyetoolkit-blog"
       ref:
         description: "Git ref (branch/tag) of target repo. Empty defaults to main."
+        type: string
+        default: "main"
     secrets:
       DEPLOY_SSH_KEY:
         description: "SSH private key for deploy user"
