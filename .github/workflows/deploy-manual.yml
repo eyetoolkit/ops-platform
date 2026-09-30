@@ -9,9 +9,15 @@ on:
       profile:
         description: "Profile name (without .yml)"
         required: true
+        type: choice
+        options:
+          - eyetoolkit-blog
       ref:
         description: "Git ref of target repo"
         required: false
+        type: choice
+        options:
+          - main
 
 jobs:
   call-deploy:
