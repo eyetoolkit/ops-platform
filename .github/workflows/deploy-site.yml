@@ -10,9 +10,15 @@ on:
       profile:
         description: "Profile name (without .yml) — must exist in ops-platform/profiles/"
         required: true
+        type: choice
+        options:
+          - eyetoolkit-blog
       ref:
         description: "Git ref (branch/tag) of target repo to deploy. Empty => main."
         required: false
+        type: choice
+        options:
+          - main
     secrets:
       DEPLOY_SSH_KEY:
         description: "SSH private key for the deploy user on the target host"
