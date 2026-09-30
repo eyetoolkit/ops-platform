@@ -11,9 +11,8 @@ on:
         type: string
         default: "eyetoolkit-blog"
       ref:
-        description: "Git ref (branch/tag) of target repo. Empty defaults to main."
+        description: "Git ref (branch/tag) of target repo. Empty -> profile default_ref."
         type: string
-        default: "main"
     secrets:
       DEPLOY_SSH_KEY:
         description: "SSH private key for deploy user"
