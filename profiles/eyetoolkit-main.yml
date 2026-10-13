@@ -12,7 +12,7 @@ source_repo_dir: .
 
 # npm install (repo has no lockfile) + build + safety gate:
 # never deploy color-vision tool even if it sneaks back into the branch
-build_cmd: 'npm install --no-audit --no-fund && npm run build && rm -rf out/zh/tools/color-vision out/en/tools/color-vision'
+build_cmd: 'npm install --no-audit --no-fund && npm run build && rm -rf out/tools/color-vision'
 artifact: out/
 
 deploy_target:
