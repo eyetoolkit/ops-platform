@@ -10,7 +10,7 @@ repo: eyetoolkit/blog
 default_ref: master
 source_repo_dir: .
 
-build_cmd: 'cd sites/life && npm ci && npm run docs:build'
+build_cmd: 'cd sites/life && npm ci --foreground-scripts && npm run docs:build'
 artifact: sites/life/docs/.vitepress/dist
 
 deploy_target:

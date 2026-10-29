@@ -89,10 +89,14 @@ else
 fi
 echo "  HEAD: $(git rev-parse --short HEAD)"
 
-# Step 2: build
+# Step 2: build (失败自动清理 node_modules 重试一次，应对 ETXTBSY/ENOTEMPTY 竞态)
 echo "[2/5] Building: $BUILD_CMD"
 cd "$WORKDIR/repo"
-eval "$BUILD_CMD" 2>&1 | tail -30
+if ! eval "$BUILD_CMD" 2>&1 | tail -30; then
+    echo "  [retry] 构建失败（多为依赖安装竞态），清理 node_modules 后重试一次 ..."
+    find "$WORKDIR/repo" -maxdepth 4 -name node_modules -type d -prune -exec rm -rf {} + 2>/dev/null || true
+    eval "$BUILD_CMD" 2>&1 | tail -30
+fi
 
 ARTIFACT_PATH="$WORKDIR/repo/$ARTIFACT"
 if [ ! -d "$ARTIFACT_PATH" ]; then

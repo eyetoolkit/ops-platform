@@ -9,7 +9,7 @@ repo: eyetoolkit/eyetoolkit-consensus
 default_ref: main
 source_repo_dir: .
 
-build_cmd: 'npm ci && npm run build'
+build_cmd: 'npm ci --foreground-scripts && npm run build'
 artifact: docs/.vitepress/dist
 
 deploy_target:
