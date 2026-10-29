@@ -100,4 +100,5 @@ bash /opt/ops-platform/scripts/deploy-static.sh <profile名> <分支> /opt/ops-p
 | `clinic/` | eyetoolkit/clinic | main |
 
 主站本地预览：`npm run dev`（依赖已装，`npm run build` 已验证通过）。
-服务器磁盘：深度清理后可用约 15G；`/opt/_build_` 5.7G 是构建缓存，勿当垃圾清。
+服务器磁盘：2026-10-29 深度清理后可用 21G（47%）。`/opt/_build_` 构建缓存已于当日清空
+（开发全在本地，构建只走 webhook；首次部署会自动浅拉仓+装依赖，比平时慢约 3~5 分钟）。
