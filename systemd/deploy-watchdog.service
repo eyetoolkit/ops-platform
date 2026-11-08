@@ -1,0 +1,12 @@
+[Unit]
+Description=Deploy watchdog - webhook delivery fallback for eyetoolkit.com
+Documentation=file:/opt/ops-platform/DEPLOYMENT.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/ops-platform/scripts/deploy-watchdog.py
+TimeoutStartSec=1900
+# Optional environment overrides (e.g. outbound proxy). Missing file is ignored.
+EnvironmentFile=-/etc/default/deploy-watchdog

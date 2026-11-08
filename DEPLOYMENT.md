@@ -57,8 +57,31 @@
 | `/var/log/deploy-webhook.log` | PUSH/IGNORE/START/OK/FAIL 汇总 |
 | `/opt/_build_/<profile>/webhook-deploy.log` | 单次部署完整输出（排障看这个） |
 | 企业微信通知 | 每次 OK/FAIL 推送（receiver 的 NOTIFY_URL） |
+| `/var/log/deploy-watchdog.log` | 兜底轮询：CHECK / IN SYNC / STALE / MISS / DEPLOY OK\|FAIL |
+| `/var/log/deploy-watchdog-detail.log` | watchdog 触发的单次部署完整输出 |
 
 健康自检：9 个入口全 200（主站/consensus/wiki/drugs/exam/knowledge/life/blog/clinic）。
+
+### 4.1 兜底轮询 deploy-watchdog（2026-11-08 新增）
+
+**背景**：GitHub 的 push delivery 偶发在 TCP/TLS 建连层失败（GitHub 侧记录 `502 failed to connect to host`、响应头为空；nginx 无任何对应请求日志），且 **GitHub 不重发失败的 push delivery** → 一次丢包即永久漏部署。改 `receiver.py` 的队列逻辑修不到这个环节（它只负责「收到之后」）。
+
+**机制**：systemd timer 每 5 分钟调用 `scripts/deploy-watchdog.py`：
+
+1. 服务器侧主动 `git ls-remote` 取 `eyetoolkit/blog@master` 的 HEAD；
+2. 逐个比对 `/opt/_build_/<profile>/repo` 的实际构建 HEAD（**真相源**：webhook 部署与手动部署都会更新它，所以 webhook 成功时 watchdog 看到 IN SYNC 不会重复部署，也无需另建 state 文件）；
+3. 只对 STALE 的 profile 补跑 `deploy-static.sh`；失败不写任何状态，下一轮自动重试；
+4. `flock` 防 tick 重叠；检测到 `deploy-*.sh` 正在跑就 SKIP，避免与 webhook 部署及 nginx reload 撞车。
+
+**文件**：`scripts/deploy-watchdog.py`、`systemd/deploy-watchdog.{service,timer}`（模板，装到 `/etc/systemd/system/`）。
+
+```bash
+systemctl status deploy-watchdog.timer
+python3 /opt/ops-platform/scripts/deploy-watchdog.py --dry-run   # 只看漂移不部署
+journalctl -u deploy-watchdog.service -n 50
+```
+
+扩展监控其它仓：`--repo <owner/repo>`，或改脚本 `DEFAULT_REPOS`。
 
 ## 五、排障手册（按症状）
 
@@ -68,11 +91,16 @@
 | FAIL 带 ETXTBSY/ENOTEMPTY | npm 竞态 → 脚本已自动重试；仍败则 `rm -rf /opt/_build_/<profile>/repo/sites/*/node_modules` 重跑 |
 | `vitepress: not found` / ESM export 报错 | node_modules 损坏 → 同上清理重跑 |
 | 部署成功但线上没变化 | 推的分支不在映射表（IGNORE）；或改的是本地没 push；或看错了线上页（首页导航是 page.tsx 内联，SiteNav 只在子页面） |
+| webhook 日志**连 `PUSH` 行都没有**、线上没变 | GitHub→源站建连层丢投递（GitHub 侧 502 `failed to connect to host`，nginx 无对应请求），**GitHub 不重发** → watchdog 5 分钟内自动补；急用手动跑 `python3 /opt/ops-platform/scripts/deploy-watchdog.py`。GitHub 侧证据用 `GET /repos/eyetoolkit/blog/hooks/{id}/deliveries` 查 |
 | FAIL 带断言/artifact 缺失 | 看 webhook-deploy.log 的 `::error::` 行定位 |
 
 手动兜底部署（webhook 失效时）：
 ```bash
 ssh root@101.96.194.237   # 密钥 ~/.ssh/game_ed25519
+# 推荐：一次补齐所有 stale profile（手动单跑 deploy-static.sh 极易只补一个、漏掉其余 5 个）
+python3 /opt/ops-platform/scripts/deploy-watchdog.py
+python3 /opt/ops-platform/scripts/deploy-watchdog.py --dry-run   # 先只查看差异
+# 或明确只补单个 profile
 bash /opt/ops-platform/scripts/deploy-static.sh <profile名> <分支> /opt/ops-platform
 ```
 
@@ -86,6 +114,7 @@ bash /opt/ops-platform/scripts/deploy-static.sh <profile名> <分支> /opt/ops-p
    自动部署只走服务器 webhook——两管线并发会争抢同一构建仓（同日事故）。
 3. 旧 VitePress 断言（`assets/style.*.css`）**不要恢复**：对 Next.js 产物必挂（同日事故直接死因）。
 4. 线上文章页判据、封面解析链等站点内容规则见工作区 MEMORY.md，此处只管部署。
+5. **GitHub push delivery 失败不重发**（2026-11-08 定位）：判据是「`/var/log/deploy-webhook.log` 连 `PUSH` 行都没有」+「GitHub deliveries 显示 502 且响应头为空」+「nginx access/error 日志无对应请求」。此时**不要再去改 receiver.py**，那是「收到之后」的环节；靠 watchdog 轮询兜底，或手动补部署。两者别混：有 `PUSH` 无 `DEPLOY OK` 才是队列/构建问题。
 
 ## 七、本地开发环境（2026-10-29 迁移定稿）
 
