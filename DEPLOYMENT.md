@@ -83,6 +83,17 @@ journalctl -u deploy-watchdog.service -n 50
 
 扩展监控其它仓：`--repo <owner/repo>`，或改脚本 `DEFAULT_REPOS`。
 
+**服务器安装/更新**：
+```bash
+git -C /opt/ops-platform pull --ff-only origin main
+cp /opt/ops-platform/systemd/deploy-watchdog.service /etc/systemd/system/
+cp /opt/ops-platform/systemd/deploy-watchdog.timer  /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now deploy-watchdog.timer
+systemctl start deploy-watchdog.service   # 立即验证一次，正常应 exit 0
+```
+
+🔴 **单元必须显式 `Environment=HOME=/root`**（2026-11-08 踩坑）：systemd 服务不继承 HOME，`git credential-store` 找不到 `/root/.git-credentials`，`ls-remote` 报 `fatal: unable to set up default path; use --file` / `could not read Username`，服务 exit=1；而在 SSH 里手动跑脚本完全正常 —— 极易误判成脚本 bug。
+
 ## 五、排障手册（按症状）
 
 | 症状 | 原因 → 处置 |
