@@ -8,5 +8,9 @@ Wants=network-online.target
 Type=oneshot
 ExecStart=/usr/bin/python3 /opt/ops-platform/scripts/deploy-watchdog.py
 TimeoutStartSec=1900
+# systemd services do not inherit HOME. git credential-store needs it to find
+# /root/.git-credentials; without this, ls-remote fails with
+# "fatal: unable to set up default path; use --file".
+Environment=HOME=/root
 # Optional environment overrides (e.g. outbound proxy). Missing file is ignored.
 EnvironmentFile=-/etc/default/deploy-watchdog
