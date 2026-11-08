@@ -30,7 +30,7 @@ USAGE
 -----
   python3 deploy-watchdog.py                     # normal single pass (timer)
   python3 deploy-watchdog.py --dry-run          # report only, never deploy
-  python3 deploy-watchdog.py --repo eyetoolkit/blog
+  python3 deploy-watchdog.py --repo eyetoolkit/blog   # watch just one repo
   python3 deploy-watchdog.py --skip-inflight-check
 
 Exit code 1 means at least one ls-remote/deploy failed; the next tick retries.
@@ -49,7 +49,16 @@ DEPLOY_MAP = "/opt/deploy-webhook/deploy-map.json"
 LOCK_PATH = "/opt/deploy-webhook/watchdog.lock"
 LOG_PATH = "/var/log/deploy-watchdog.log"
 DETAIL_LOG_PATH = "/var/log/deploy-watchdog-detail.log"
-DEFAULT_REPOS = ["eyetoolkit/blog"]
+# Only repos whose profiles all have a real /opt/_build_/<profile>/repo build
+# checkout can be watched: build_head() uses that checkout as the truth source.
+# eyetoolkit/clinic and eyetoolkit/clinic-superadmin are Flask apps WITHOUT such
+# build repos -- adding them would make build_head() return None every tick,
+# i.e. a false STALE and a redeploy every 5 minutes. Keep them out.
+DEFAULT_REPOS = [
+    "eyetoolkit/blog",
+    "eyetoolkit/eyetoolkit",
+    "eyetoolkit/eyetoolkit-consensus",
+]
 REMOTE_TMPL = "https://github.com/%s.git"
 BUILD_REPO_TMPL = "/opt/_build_/%s/repo"
 LS_REMOTE_TIMEOUT = 60

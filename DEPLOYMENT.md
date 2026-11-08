@@ -68,7 +68,7 @@
 
 **机制**：systemd timer 每 5 分钟调用 `scripts/deploy-watchdog.py`：
 
-1. 服务器侧主动 `git ls-remote` 取 `eyetoolkit/blog@master` 的 HEAD；
+1. 服务器侧主动 `git ls-remote` 取各仓部署分支的 HEAD（默认 3 个仓：`eyetoolkit/blog@master`、`eyetoolkit/eyetoolkit@restore/chinese-v1`、`eyetoolkit/eyetoolkit-consensus@main`）；
 2. 逐个比对 `/opt/_build_/<profile>/repo` 的实际构建 HEAD（**真相源**：webhook 部署与手动部署都会更新它，所以 webhook 成功时 watchdog 看到 IN SYNC 不会重复部署，也无需另建 state 文件）；
 3. 只对 STALE 的 profile 补跑 `deploy-static.sh`；失败不写任何状态，下一轮自动重试；
 4. `flock` 防 tick 重叠；检测到 `deploy-*.sh` 正在跑就 SKIP，避免与 webhook 部署及 nginx reload 撞车。
@@ -81,7 +81,9 @@ python3 /opt/ops-platform/scripts/deploy-watchdog.py --dry-run   # 只看漂移�
 journalctl -u deploy-watchdog.service -n 50
 ```
 
-扩展监控其它仓：`--repo <owner/repo>`，或改脚本 `DEFAULT_REPOS`。
+扩展监控其它仓：`--repo <owner/repo>`（可重复），或改脚本 `DEFAULT_REPOS`（2026-11-08 19:50 起覆盖 3 仓 8 个 profile，主站与 consensus 也纳入兜底）。
+
+🔴 **不要加 `eyetoolkit/clinic` / `eyetoolkit/clinic-superadmin`**：这两个是 Flask 应用，`/opt/_build_/<profile>/repo` 不存在，`build_head()` 恒返回 `None` → 每轮都误判 STALE → 每 5 分钟重复部署一次。只有「所有 profile 都有真实构建仓 checkout」的仓才能进 `DEFAULT_REPOS`；clinic 类仓需要另做基于「已部署 commit 记录」的判据。
 
 **服务器安装/更新**：
 ```bash
